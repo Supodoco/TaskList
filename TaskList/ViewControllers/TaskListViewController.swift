@@ -72,21 +72,16 @@ class TaskListViewController: UITableViewController {
     }
     
     private func saveTask(_ taskName: String) {
-        let task = Task(context: storage.viewContext)
-        task.title = taskName
+        let task = storage.saveTask(taskName)
         taskList.append(task)
-        
         let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
         tableView.insertRows(at: [cellIndex], with: .automatic)
-        
-        storage.saveContext()
     }
     
     private func editTask(withIndex indexPath: IndexPath, result: String) {
         let task = taskList[indexPath.row]
-        task.title = result
+        storage.editTask(task: task, result: result)
         tableView.reloadRows(at: [indexPath], with: .automatic)
-        storage.saveContext()
     }
 }
 
@@ -120,7 +115,7 @@ extension TaskListViewController {
         if editingStyle == .delete {
             let task = taskList[indexPath.row]
             
-            storage.viewContext.delete(task)
+            storage.deleteTask(task: task)
             taskList.remove(at: indexPath.row)
                         
             tableView.deleteRows(at: [indexPath], with: .automatic)

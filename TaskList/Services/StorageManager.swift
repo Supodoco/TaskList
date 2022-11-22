@@ -24,12 +24,11 @@ class StorageManager {
         return container
     }()
     
-    lazy var viewContext = persistentContainer.viewContext
 
     func saveContext() {
-        if viewContext.hasChanges {
+        if persistentContainer.viewContext.hasChanges {
             do {
-                try viewContext.save()
+                try persistentContainer.viewContext.save()
             } catch let error {
                 print(error.localizedDescription)
             }
@@ -39,10 +38,27 @@ class StorageManager {
     func fetchData() -> [Task] {
         let fetchRequest = Task.fetchRequest()
         do {
-            return try viewContext.fetch(fetchRequest)
+            return try persistentContainer.viewContext.fetch(fetchRequest)
         } catch let error {
             print(error.localizedDescription)
             return []
         }
     }
+    func saveTask(_ taskName: String) -> Task {
+        let task = Task(context: persistentContainer.viewContext)
+        task.title = taskName
+        saveContext()
+        return task
+    }
+    
+    func deleteTask(task: Task) {
+        persistentContainer.viewContext.delete(task)
+        saveContext()
+    }
+    
+    func editTask(task: Task, result: String) {
+        task.title = result
+        saveContext()
+    }
+    
 }
