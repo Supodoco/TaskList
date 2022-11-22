@@ -7,7 +7,7 @@
 
 import UIKit
 
-class TaskListViewController: UITableViewController {
+final class TaskListViewController: UITableViewController {
     
     private let storage = StorageManager.shared
     
@@ -19,9 +19,9 @@ class TaskListViewController: UITableViewController {
         view.backgroundColor = .white
         setupNavigationBar()
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellID)
-        taskList = storage.fetchData()
+        fetchData()
     }
-
+    
     private func setupNavigationBar() {
         title = "Task List"
         navigationController?.navigationBar.prefersLargeTitles = true
@@ -42,12 +42,6 @@ class TaskListViewController: UITableViewController {
         )
         
         navigationController?.navigationBar.tintColor = .white
-    }
-    
-    @objc private func addNewTask() {
-        showAlert(withTitle: "New Task", andMessage: "What do you want to do?") { [unowned self] task in
-            saveTask(task)
-        }
     }
     
     private func showAlert(
@@ -71,16 +65,34 @@ class TaskListViewController: UITableViewController {
         present(alert, animated: true)
     }
     
+    @objc private func addNewTask() {
+        showAlert(withTitle: "New Task", andMessage: "What do you want to do?") { [unowned self] task in
+            saveTask(task)
+        }
+    }
+    
+    private func fetchData() {
+        storage.fetchData { result in
+            switch result {
+            case .success(let tasks):
+                taskList = tasks
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
     private func saveTask(_ taskName: String) {
-        let task = storage.saveTask(taskName)
-        taskList.append(task)
+        storage.saveTask(taskName) { task in
+            taskList.append(task)
+        }
         let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
         tableView.insertRows(at: [cellIndex], with: .automatic)
     }
     
     private func editTask(withIndex indexPath: IndexPath, result: String) {
         let task = taskList[indexPath.row]
-        storage.editTask(task: task, result: result)
+        storage.updateTask(task: task, result: result)
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
 }

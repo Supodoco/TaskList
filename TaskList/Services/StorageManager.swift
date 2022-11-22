@@ -12,9 +12,7 @@ class StorageManager {
     
     static let shared = StorageManager()
     
-    private init() {}
-    
-    let persistentContainer: NSPersistentContainer = {
+    private let persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "TaskList")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
@@ -24,6 +22,11 @@ class StorageManager {
         return container
     }()
     
+    private let viewContext: NSManagedObjectContext
+    
+    private init() {
+        viewContext = persistentContainer.viewContext
+    }
 
     func saveContext() {
         if persistentContainer.viewContext.hasChanges {
@@ -35,28 +38,28 @@ class StorageManager {
         }
     }
     
-    func fetchData() -> [Task] {
+    func fetchData(completion: (Result<[Task], Error>) -> Void) {
         let fetchRequest = Task.fetchRequest()
         do {
-            return try persistentContainer.viewContext.fetch(fetchRequest)
+            let tasks = try viewContext.fetch(fetchRequest)
+            completion(.success(tasks))
         } catch let error {
-            print(error.localizedDescription)
-            return []
+            completion(.failure(error))
         }
     }
-    func saveTask(_ taskName: String) -> Task {
-        let task = Task(context: persistentContainer.viewContext)
+    func saveTask(_ taskName: String, completion: (Task) -> Void) {
+        let task = Task(context: viewContext)
         task.title = taskName
         saveContext()
-        return task
+        completion(task)
     }
     
     func deleteTask(task: Task) {
-        persistentContainer.viewContext.delete(task)
+        viewContext.delete(task)
         saveContext()
     }
     
-    func editTask(task: Task, result: String) {
+    func updateTask(task: Task, result: String) {
         task.title = result
         saveContext()
     }
